@@ -72,7 +72,7 @@ if page == "Predict Delivery":
     long_distance = int(shipping_distance_km > 1000)
     high_rating = int(supplier_rating >= 4)
 
-    # ❗ DO NOT include order_id & supplier_id here
+    # ❗ IDs are NOT part of model input
     model_df = pd.DataFrame([{
         "supplier_rating": supplier_rating,
         "supplier_lead_time": supplier_lead_time,
@@ -91,27 +91,29 @@ if page == "Predict Delivery":
     }])
 
     # =====================================================
-    # ONE-HOT ENCODING
+    # ONE-HOT ENCODING (SAFE)
     # =====================================================
-category_map = {
-    "shipment_mode": ["Road", "Sea"],
-    "weather_condition": ["Cloudy", "Rainy", "Storm"],
-    "region": ["East", "North", "South", "West"],
-    "holiday_period": ["Yes"],
-    "carrier_name": ["DHL", "Delhivery", "EcomExpress", "FedEx"]
-}
+    category_map = {
+        "shipment_mode": ["Road", "Sea"],
+        "weather_condition": ["Cloudy", "Rainy", "Storm"],
+        "region": ["East", "North", "South", "West"],
+        "holiday_period": ["Yes"],
+        "carrier_name": ["DHL", "Delhivery", "EcomExpress", "FedEx"]
+    }
 
-for col, values in category_map.items():
-    col_value = model_df[col].iloc[0]  # ✅ store value first
+    for col, values in category_map.items():
+        if col not in model_df.columns:
+            continue
 
-    for v in values:
-        model_df[f"{col}_{v}"] = int(col_value == v)
+        col_value = model_df[col].iloc[0]
 
-    model_df.drop(columns=[col], inplace=True)
+        for v in values:
+            model_df[f"{col}_{v}"] = int(col_value == v)
 
+        model_df.drop(columns=[col], inplace=True)
 
     # =====================================================
-    # ALIGN FEATURES
+    # ALIGN FEATURES WITH TRAINING
     # =====================================================
     model_df = model_df.reindex(columns=features, fill_value=0)
 
@@ -123,9 +125,20 @@ for col, values in category_map.items():
         label = "✅ On-Time Delivery" if prob >= 0.5 else "❌ Delayed Delivery"
 
         st.subheader("📊 Prediction Result")
-
         st.write(f"**Order ID:** {order_id}")
         st.write(f"**Supplier ID:** {supplier_id}")
 
         st.success(label)
         st.metric("On-Time Delivery Probability", f"{prob*100:.2f}%")
+
+# =====================================================
+# 2️⃣ MODEL INFO PAGE
+# =====================================================
+elif page == "Model Info":
+
+    st.header("📊 Model Information")
+    st.write(f"**Model Type:** `{model.__class__.__name__}`")
+    st.write(f"**Total Features Used:** `{len(features)}`")
+
+    st.subheader("Feature List")
+    st.dataframe(pd.DataFrame(features, columns=["Feature"]), height=500)
