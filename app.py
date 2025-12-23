@@ -12,14 +12,22 @@ st.title("🚚 ShipmentSure – On-Time Delivery Prediction")
 @st.cache_resource
 def load_model():
     ROOT = Path(__file__).parent
+
     model_path = ROOT / "best_model.pkl"
+    feature_path = ROOT / "model_features.pkl"
 
     if not model_path.exists():
         st.error(f"❌ Model file not found at: {model_path}")
         st.stop()
 
-    obj = joblib.load(model_path)
-    return obj["model"], obj["features"]
+    if not feature_path.exists():
+        st.error(f"❌ Feature file not found at: {feature_path}")
+        st.stop()
+
+    model = joblib.load(model_path)
+    features = joblib.load(feature_path)
+
+    return model, features
 
 model, features = load_model()
 
