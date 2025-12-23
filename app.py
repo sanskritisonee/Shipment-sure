@@ -93,18 +93,19 @@ if page == "Predict Delivery":
     # =====================================================
     # ONE-HOT ENCODING
     # =====================================================
-    category_map = {
-        "shipment_mode": ["Road", "Sea"],
-        "weather_condition": ["Cloudy", "Rainy", "Storm"],
-        "region": ["East", "North", "South", "West"],
-        "holiday_period": ["Yes"],
-        "carrier_name": ["DHL", "Delhivery", "EcomExpress", "FedEx"]
-    }
+category_map = {
+    "shipment_mode": ["Road", "Sea"],
+    "weather_condition": ["Cloudy", "Rainy", "Storm"],
+    "region": ["East", "North", "South", "West"],
+    "holiday_period": ["Yes"],
+    "carrier_name": ["DHL", "Delhivery", "EcomExpress", "FedEx"]
+}
 
-    for col, values in category_map.items():
-        for v in values:
-            model_df[f"{col}_{v}"] = (model_df[col].iloc[0] == v).astype(int)
-        model_df.drop(columns=[col], inplace=True)
+for col, values in category_map.items():
+    for v in values:
+        model_df[f"{col}_{v}"] = int(model_df[col].iloc[0] == v)
+    model_df.drop(columns=[col], inplace=True)
+
 
     # =====================================================
     # ALIGN FEATURES
