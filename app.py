@@ -102,8 +102,11 @@ category_map = {
 }
 
 for col, values in category_map.items():
+    col_value = model_df[col].iloc[0]  # ✅ store value first
+
     for v in values:
-        model_df[f"{col}_{v}"] = int(model_df[col].iloc[0] == v)
+        model_df[f"{col}_{v}"] = int(col_value == v)
+
     model_df.drop(columns=[col], inplace=True)
 
 
