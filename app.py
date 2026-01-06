@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import os
 
 # -----------------------------
 # Page Config
@@ -20,9 +21,19 @@ st.write("Predict whether a shipment will be **On-Time** or **Delayed** based on
 # -----------------------------
 @st.cache_resource
 def load_model():
-    model = joblib.load("shipment_delay_model.pkl")
-    features = joblib.load("model_features.pkl")
-")
+    model_path = "shipment_delay_model.pkl"
+    feature_path = "model_features.pkl"   # ✅ CORRECT FILE NAME
+
+    if not os.path.exists(model_path):
+        st.error("❌ shipment_delay_model.pkl not found in repository")
+        st.stop()
+
+    if not os.path.exists(feature_path):
+        st.error("❌ model_features.pkl not found in repository")
+        st.stop()
+
+    model = joblib.load(model_path)
+    features = joblib.load(feature_path)
     return model, features
 
 model, feature_list = load_model()
@@ -39,7 +50,7 @@ for feature in feature_list:
         input_data[feature] = st.checkbox(feature)
     else:
         input_data[feature] = st.number_input(
-            feature,
+            label=feature,
             min_value=0.0,
             value=0.0,
             step=1.0
@@ -51,7 +62,7 @@ for feature in feature_list:
 if st.button("🔮 Predict Delivery Status"):
     input_df = pd.DataFrame([input_data])
 
-    # Ensure column order matches training
+    # Ensure correct feature order
     input_df = input_df[feature_list]
 
     prediction = model.predict(input_df)[0]
