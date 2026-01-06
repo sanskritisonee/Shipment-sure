@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import joblib
 import os
 
@@ -14,55 +13,106 @@ st.set_page_config(
 )
 
 st.title("🚚 Shipment Delay Prediction System")
-st.write("Predict whether a shipment will be **On-Time** or **Delayed** based on logistics features.")
+st.write("Predict whether a shipment will be **On-Time** or **Delayed** using logistics and supplier information.")
 
 # -----------------------------
 # Load Model & Features
 # -----------------------------
 @st.cache_resource
-def load_model():
-    model_path = "shipment_delay_model.pkl"
-    feature_path = "model_features.pkl"   # ✅ CORRECT FILE NAME
-
-    if not os.path.exists(model_path):
-        st.error("❌ shipment_delay_model.pkl not found in repository")
-        st.stop()
-
-    if not os.path.exists(feature_path):
-        st.error("❌ model_features.pkl not found in repository")
-        st.stop()
-
-    model = joblib.load(model_path)
-    features = joblib.load(feature_path)
+def load_model(_version="v3"):
+    model = joblib.load("shipment_delay_model.pkl")
+    features = joblib.load("model_features.pkl")
     return model, features
 
 model, feature_list = load_model()
 
 # -----------------------------
-# Input Form
+# User Input UI
 # -----------------------------
-st.subheader("📦 Enter Shipment Details")
+st.subheader("📦 Shipment Details")
 
 input_data = {}
 
-for feature in feature_list:
-    if feature.startswith(("region_", "carrier_name_", "weather_condition_", "holiday_period_")):
-        input_data[feature] = st.checkbox(feature)
-    else:
-        input_data[feature] = st.number_input(
-            label=feature,
-            min_value=0.0,
-            value=0.0,
-            step=1.0
-        )
+# ---------- Supplier Info ----------
+st.markdown("### 🏭 Supplier Information")
+
+input_data["supplier_rating"] = st.slider(
+    "Supplier Rating",
+    1.0, 5.0, 4.0, 0.1
+)
+
+input_data["supplier_lead_time"] = st.slider(
+    "Supplier Lead Time (days)",
+    1, 30, 7
+)
+
+# ---------- Order Info ----------
+st.markdown("### 📦 Order Information")
+
+input_data["order_quantity"] = st.number_input(
+    "Order Quantity",
+    min_value=1,
+    value=10
+)
+
+input_data["unit_price"] = st.number_input(
+    "Unit Price",
+    min_value=1.0,
+    value=100.0
+)
+
+input_data["total_order_value"] = input_data["order_quantity"] * input_data["unit_price"]
+
+# ---------- Logistics ----------
+st.markdown("### 🚚 Logistics")
+
+input_data["shipping_distance_km"] = st.slider(
+    "Shipping Distance (km)",
+    10, 3000, 200
+)
+
+distance_type = st.selectbox(
+    "Distance Category",
+    ["Short", "Long"]
+)
+input_data["long_distance"] = 1 if distance_type == "Long" else 0
+
+shipment_mode = st.selectbox(
+    "Shipment Mode",
+    ["Road", "Sea"]
+)
+input_data["shipment_mode_Road"] = 1 if shipment_mode == "Road" else 0
+input_data["shipment_mode_Sea"] = 1 if shipment_mode == "Sea" else 0
+
+# ---------- Delivery Speed ----------
+st.markdown("### ⏱ Delivery Speed")
+
+speed = st.selectbox(
+    "Expected Delivery Speed",
+    ["Normal", "Slow", "Very Slow"]
+)
+
+input_data["delivery_speed_Normal"] = 1 if speed == "Normal" else 0
+input_data["delivery_speed_Slow"] = 1 if speed == "Slow" else 0
+input_data["delivery_speed_Very_Slow"] = 1 if speed == "Very Slow" else 0
+
+# ---------- Quality Signals ----------
+st.markdown("### ⭐ Quality Indicators")
+
+input_data["high_rating"] = 1 if input_data["supplier_rating"] >= 4.0 else 0
 
 # -----------------------------
-# Predict Button
+# Fill Missing Features with 0
+# -----------------------------
+for feature in feature_list:
+    if feature not in input_data:
+        input_data[feature] = 0
+
+# -----------------------------
+# Prediction
 # -----------------------------
 if st.button("🔮 Predict Delivery Status"):
     input_df = pd.DataFrame([input_data])
-
-    # Ensure correct feature order
     input_df = input_df[feature_list]
 
     prediction = model.predict(input_df)[0]
@@ -75,4 +125,4 @@ if st.button("🔮 Predict Delivery Status"):
     else:
         st.success("✅ **Prediction: ON-TIME**")
 
-    st.write(f"**Delay Probability:** `{probability:.2%}`")
+    st.metric("Delay Probability", f"{probability:.2%}")
