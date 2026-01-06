@@ -21,7 +21,7 @@ st.write("Predict whether a shipment will be **On-Time** or **Delayed** based on
 @st.cache_resource
 def load_model():
     model = joblib.load("shipment_delay_model.pkl")
-    features = joblib.load("model_features(1).pkl")
+    features = joblib.load("model_features.pkl")
     return model, features
 
 model, feature_list = load_model()
