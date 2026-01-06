@@ -17,12 +17,12 @@ except ImportError:
 # Page Config
 # -----------------------------
 st.set_page_config(
-    page_title="Shipment Delay Prediction",
+    page_title="Shipment Sure",
     page_icon="🚚",
     layout="centered"
 )
 
-st.title("🚚 Shipment Delay Prediction System")
+st.title("🚚 Shipment Sure")
 st.write(
     "Predict whether a shipment will be **On-Time** or **Delayed**, "
     "understand **why**, and assess **risk level**."
